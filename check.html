@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
 
 
-<title>Making Large Language Models Reliable using Guardrails AI</title>
+<title>Making Large Language Models produce structured output using Guardrails AI</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -80,7 +80,7 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Making Large Language Models Reliable using Guardrails AI</h1>
+<h1 class="title">Making Large Language Models produce structured output using Guardrails AI</h1>
 </div>
 
 
@@ -95,125 +95,93 @@ pre > code.sourceCode > span > a:first-child::before { text-decoration: underlin
 
 </header>
 
-<div class="cell" data-execution_count="63">
-<div class="sourceCode cell-code" id="cb1" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> openai</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell" data-execution_count="66">
+<div class="sourceCode cell-code" id="cb1" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> textwrap <span class="im">import</span> TextWrapper</span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>wrapper <span class="op">=</span> TextWrapper(width<span class="op">=</span><span class="dv">80</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<section id="language-models-are-not-reliable" class="level2">
-<h2 class="anchored" data-anchor-id="language-models-are-not-reliable">Language Models are not reliable</h2>
-<p>I asked GPT-3 to define what “reliable software” is. Here’s what it said:</p>
-<div class="cell" data-execution_count="70">
-<div class="sourceCode cell-code" id="cb2" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> textwrap</span>
-<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>wrapper <span class="op">=</span> textwrap.TextWrapper(width<span class="op">=</span><span class="dv">70</span>, break_long_words<span class="op">=</span><span class="va">False</span>, replace_whitespace<span class="op">=</span><span class="va">False</span>)</span>
-<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> openai.ChatCompletion.create(</span>
-<span id="cb2-6"><a href="#cb2-6" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="st">"gpt-3.5-turbo"</span>,</span>
-<span id="cb2-7"><a href="#cb2-7" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">=</span>[</span>
-<span id="cb2-8"><a href="#cb2-8" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb2-9"><a href="#cb2-9" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>,</span>
-<span id="cb2-10"><a href="#cb2-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">"content"</span>: <span class="st">"You are a helpful assistant."</span>,</span>
-<span id="cb2-11"><a href="#cb2-11" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>,</span>
-<span id="cb2-12"><a href="#cb2-12" aria-hidden="true" tabindex="-1"></a>            <span class="st">"content"</span>: <span class="st">"How do you define reliable software?"</span>,</span>
-<span id="cb2-13"><a href="#cb2-13" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb2-14"><a href="#cb2-14" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb2-15"><a href="#cb2-15" aria-hidden="true" tabindex="-1"></a>    temperature<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb2-16"><a href="#cb2-16" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb2-17"><a href="#cb2-17" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb2-18"><a href="#cb2-18" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span>.join(wrapper.wrap(response[<span class="st">"choices"</span>][<span class="dv">0</span>][<span class="st">"message"</span>][<span class="st">"content"</span>])))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>Reliable software can be defined as software that consistently
-performs its intended functions accurately and efficiently, without
-any unexpected failures or errors. It is dependable, trustworthy, and
-can be relied upon to deliver consistent results under various
-conditions and user interactions. Reliable software is robust, stable,
-and resilient, ensuring that it operates as expected even in the
-presence of unforeseen circumstances or changes in the environment. It
-is also maintainable, allowing for easy updates, bug fixes, and
-enhancements without compromising its reliability.</code></pre>
+<div class="cell" data-execution_count="51">
+<div class="sourceCode cell-code" id="cb2" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> openai</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-</div>
-<p>I think it is safe to say that Language models like GPT-3 don’t meet the criteria of reliable software, at least when prompted and used naively. For instance, let’s take this very simple prompt of adding two numbers. In this case, I would like gpt-3 to act as a calculator and return back to me the result. Perhaps this is too contrived but for many tasks, we will require the model to consistently use a given output format.</p>
-<div class="cell" data-source-line-numbers="6" data-execution_count="71">
-<div class="sourceCode cell-code" id="cb4" data-source-line-numbers="6" data-code-line-numbers="6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> openai.ChatCompletion.create(</span>
-<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="st">"gpt-3.5-turbo"</span>,</span>
-<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">=</span>[</span>
-<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"You are a helpful assistant."</span>,</span>
-<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"Return only the integer answer, 1+1="</span>,</span>
-<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a>    temperature<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb4-11"><a href="#cb4-11" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb4-12"><a href="#cb4-12" aria-hidden="true" tabindex="-1"></a>response[<span class="st">'choices'</span>][<span class="dv">0</span>][<span class="st">"message"</span>][<span class="st">'content'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="71">
+<section id="language-models-are-hard-to-configure-and-control" class="level2">
+<h2 class="anchored" data-anchor-id="language-models-are-hard-to-configure-and-control">Language Models are hard to configure and control</h2>
+<p>Let’s start with a very simple prompt asking OpenAI’s GPT-3 to add 1+1 and return the answer. In this case, we would like GPT-3 to act as a calculator and return back to us the result.</p>
+<p>Note for those not familiar with how to call OpenAI chat completion: the TLDR is you choose a model, send the prompts as history of system, user and assistant messages, along with somple sampling parameters like (<code>top_p</code> or <code>temperature</code>) and then you get back a response which you can parse the assistant message from.</p>
+<div class="cell" data-source-line-numbers="6" data-execution_count="52">
+<div class="sourceCode cell-code" id="cb3" data-source-line-numbers="6" data-code-line-numbers="6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> openai.ChatCompletion.create(</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="st">"gpt-3.5-turbo"</span>,</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">=</span>[</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"system"</span>, <span class="st">"content"</span>: <span class="st">"You are a helpful assistant."</span>,</span>
+<span id="cb3-6"><a href="#cb3-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"Return only the integer answer, 1+1="</span>,</span>
+<span id="cb3-7"><a href="#cb3-7" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb3-8"><a href="#cb3-8" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb3-9"><a href="#cb3-9" aria-hidden="true" tabindex="-1"></a>    temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb3-10"><a href="#cb3-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb3-11"><a href="#cb3-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb3-12"><a href="#cb3-12" aria-hidden="true" tabindex="-1"></a>response[<span class="st">'choices'</span>][<span class="dv">0</span>][<span class="st">"message"</span>][<span class="st">'content'</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="52">
 <pre data-code-line-numbers=""><code>'The integer answer to 1+1 is 2.'</code></pre>
 </div>
 </div>
-<p>You can see that even though I explicitly asked “Return only the integer answer” expecting only <code>2</code> to be returned but the model returned a full sentence string instead.</p>
-<p>When designing a system where a language model is one component, how can we adapt it to make it more reliable?</p>
-<p>How can we enforce an output interface for the LLM model to adhere to (without having to muck around with different prompting strategies manually)?</p>
-<p>There seems to be several patterns that are emerging:</p>
-<ul>
-<li>Use a tool like <a href="https://www.guardrails.ai/">guardrails AI</a> where one can specify the format using the RAIL spec, prompting the model with a RAIL spec and taking corrective action if the model doesn’t adhere to the spec.</li>
-<li>Use “function calling” capabilities of a few closed-source chat APIs like <a href="https://openai.com/blog/function-calling-and-other-api-updates">OpenAI’s API</a> along with integrations with pydantic (see <a href="https://www.askmarvin.ai/welcome/overview/">askmarvinai</a> and <a href="https://jxnl.github.io/instructor/">instructor</a>)</li>
-<li>Use a tool like <a href="https://github.com/outlines-dev/outlines">outlines</a> where one can specify the output format as a regex, JSON schema or pydantic model and outlines will perform a regex-guided generation of the output by modifying the generated model probabilities of tokens so as to adhere to the regex.</li>
-</ul>
-<p>I am going to examine the guardrails AI approach in more detail.</p>
+<p>You can see that even though we explicitly stated “Return only the integer answer” expecting only <code>2</code> to be returned, the model chose to return a full sentence string instead, causing all sorts of frustration.</p>
+<p>To resolve this naively, we would then go about a “prompt engineering” journey where we try to find the “right prompt template” to get the model to do what we want. This is a very time consuming process and is not scalable.</p>
+<p>So the question becomes, when engineering a system that makes use of a language model as one component, how can we enforce control over the output of the model without spending endless cycles tuning prompts ?</p>
+<p>There are several approaches to this probelm.</p>
+<p>In this article, we will do a deep dive into the <a href="https://guardrailsai.com">guardrails AI</a> approach. The TLDR is the following: guardrails AI - allows us to declare our output schema using familiar tooling like <a href="https://docs.pydantic.dev/latest/">pydantic</a> - provides us with out of the box prompt templates that we can use to get the model to produce the output we want - if the language model fails to produce the output we want, guardrails has out of the box prompt templates to “re-ask the model” to correct its output</p>
 </section>
-<section id="guardrails-ai-overview" class="level2">
-<h2 class="anchored" data-anchor-id="guardrails-ai-overview">Guardrails AI overview</h2>
-<section id="overview" class="level3">
-<h3 class="anchored" data-anchor-id="overview">Overview</h3>
-<p>Let’s start with <a href="https://docs.guardrailsai.com/">guardrails AI</a>. Using the same query we used above</p>
-<div class="cell" data-execution_count="72">
-<div class="sourceCode cell-code" id="cb6" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> <span class="st">"""1+1=?"""</span></span>
-<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(query)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<section id="guardrails-ai-deep-dive" class="level2">
+<h2 class="anchored" data-anchor-id="guardrails-ai-deep-dive">Guardrails AI deep dive</h2>
+<section id="de-mystifying-the-guardrails-ai-approach-with-a-simple-example" class="level3">
+<h3 class="anchored" data-anchor-id="de-mystifying-the-guardrails-ai-approach-with-a-simple-example">De-mystifying the guardrails AI approach with a simple example</h3>
+<p>We start with the same simple query</p>
+<div class="cell" data-execution_count="53">
+<div class="sourceCode cell-code" id="cb5" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a>query <span class="op">=</span> <span class="st">"""1+1=?"""</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(query)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre data-code-line-numbers=""><code>1+1=?</code></pre>
 </div>
 </div>
-<p>We define the desired answer format/schema using a popular python library pydantic</p>
-<div class="cell" data-execution_count="73">
-<div class="sourceCode cell-code" id="cb8" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, Field</span>
+<p>We now define the desired answer schema using [pydantic]((https://docs.pydantic.dev/latest/). Pydantic relies on python type annotations to define the attributes of a class.</p>
+<div class="cell" data-execution_count="54">
+<div class="sourceCode cell-code" id="cb7" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pydantic <span class="im">import</span> BaseModel, Field</span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> IntegerAnswer(BaseModel):</span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""The answer to a question."""</span></span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span> <span class="op">=</span> Field(description<span class="op">=</span><span class="st">"The answer to the question."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We then have to define quite a few things to get guardrails AI to work out of the box: - the system (instruction) prompt template - the user prompt template</p>
+<p>Call guardrails <code>Guard.from_pydantic</code> to - produce a spec of our pydantic model that can be inserted into the prompt templates</p>
+<div class="cell" data-execution_count="55">
+<div class="sourceCode cell-code" id="cb8" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> guardrails <span class="im">as</span> gd</span>
 <span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> IntegerAnswer(BaseModel):</span>
-<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="co">"""The answer to a question."""</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>system_instructions <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a><span class="st">You are a helpful assistant only capable of communicating with valid JSON, and no other text.</span></span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
 <span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span> <span class="op">=</span> Field(description<span class="op">=</span><span class="st">"The answer to the question."</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>user_prompt <span class="op">=</span> <span class="st">"""</span></span>
+<span id="cb8-8"><a href="#cb8-8" aria-hidden="true" tabindex="-1"></a><span class="st">$</span><span class="sc">{query}</span></span>
+<span id="cb8-9"><a href="#cb8-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-10"><a href="#cb8-10" aria-hidden="true" tabindex="-1"></a><span class="st">$</span><span class="sc">{gr.complete_json_suffix_v2}</span></span>
+<span id="cb8-11"><a href="#cb8-11" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
+<span id="cb8-12"><a href="#cb8-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb8-13"><a href="#cb8-13" aria-hidden="true" tabindex="-1"></a>guard <span class="op">=</span> gd.Guard.from_pydantic(</span>
+<span id="cb8-14"><a href="#cb8-14" aria-hidden="true" tabindex="-1"></a>    instructions<span class="op">=</span>system_instructions,</span>
+<span id="cb8-15"><a href="#cb8-15" aria-hidden="true" tabindex="-1"></a>    prompt<span class="op">=</span>user_prompt,</span>
+<span id="cb8-16"><a href="#cb8-16" aria-hidden="true" tabindex="-1"></a>    output_class<span class="op">=</span>IntegerAnswer,</span>
+<span id="cb8-17"><a href="#cb8-17" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 </div>
-<p>We then write this guardrails code.</p>
-<div class="cell" data-execution_count="74">
-<div class="sourceCode cell-code" id="cb9" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> guardrails <span class="im">as</span> gd</span>
-<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>instructions <span class="op">=</span> <span class="st">"""</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="st">You are a helpful assistant only capable of communicating with valid JSON, and no other text.</span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="st">"""</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="st">$</span><span class="sc">{query}</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="st">$</span><span class="sc">{gr.complete_json_suffix_v2}</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="st">"""</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a>guard <span class="op">=</span> gd.Guard.from_pydantic(</span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>    instructions<span class="op">=</span>instructions,</span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>    prompt<span class="op">=</span>prompt,</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>    output_class<span class="op">=</span>IntegerAnswer,</span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>Guardrails will build the prompt for us given a prompt template that we had to craft.</p>
-<p>For crafting the prompt-template, we make use of - variables like <code>query</code> which we pass in like so <code>${query}</code> - constants like <code>complete_json_suffix_v2</code> which reference pre-defined prompt templates which we can find in <a href="https://github.com/guardrails-ai/guardrails/blob/main/guardrails/constants.xml">constants.xml</a> file</p>
-<p>Let’s inspect the prompt that guardrails generated for us:</p>
-<div class="cell" data-execution_count="75">
-<div class="sourceCode cell-code" id="cb10" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(guard.instructions.source)</span>
-<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(guard.prompt.source)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Let’s print the produced system prompt and user prompt to see how the spec is inserted into the templates.</p>
+<div class="cell" data-execution_count="56">
+<div class="sourceCode cell-code" id="cb9" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"system prompt"</span>, guard.instructions)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"user prompt"</span>, guard.prompt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>
+<pre data-code-line-numbers=""><code>system prompt 
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
 
-
+user prompt 
 ${query}
 
 
@@ -234,70 +202,370 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 </code></pre>
 </div>
 </div>
+<p>To craft our prompt-templates, we need to get familiarized with Guardrails AI’s prompt templating language.</p>
+<ul>
+<li>guardrails relies on a <code>${var}</code> syntax</li>
+<li>variables like our <code>query</code> can be passed in like so <code>${query}</code></li>
+<li>constants like <code>complete_json_suffix_v2</code> reference pre-defined prompt templates which we can find in the Guardrails AI <a href="https://github.com/guardrails-ai/guardrails/blob/main/guardrails/constants.xml">constants.xml</a> file</li>
+</ul>
+<p>We can see that Guardrails AI has produced the following xml spec from our pydantic model</p>
+<div class="sourceCode" id="cb11" data-code-line-numbers=""><pre class="sourceCode xml code-with-copy"><code class="sourceCode xml"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>&lt;<span class="kw">output</span>&gt;</span>
+<span id="cb11-2"><a href="#cb11-2" aria-hidden="true" tabindex="-1"></a>    &lt;<span class="kw">integer</span><span class="ot"> name=</span><span class="st">"value"</span><span class="ot"> description=</span><span class="st">"The answer to the question."</span>/&gt;</span>
+<span id="cb11-3"><a href="#cb11-3" aria-hidden="true" tabindex="-1"></a>&lt;/<span class="kw">output</span>&gt;</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+<section id="inspecting-how-guardrail-builds-the-prompt" class="level3">
+<h3 class="anchored" data-anchor-id="inspecting-how-guardrail-builds-the-prompt">Inspecting how Guardrail builds the prompt</h3>
+<p>Let’s load the <code>constants.xml</code> file and see what the <code>complete_json_suffix_v2</code> template looks like:</p>
+<div class="cell" data-execution_count="57">
+<div class="sourceCode cell-code" id="cb12" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> pathlib <span class="im">import</span> Path</span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> xml.etree.ElementTree <span class="im">as</span> ET</span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>tree <span class="op">=</span> ET.parse((Path(gd.<span class="va">__file__</span>).parent <span class="op">/</span> <span class="st">"constants.xml"</span>))</span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>root <span class="op">=</span> tree.getroot()</span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Now you can access the elements in the XML file</span></span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a><span class="cf">for</span> child <span class="kw">in</span> root:</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="cf">if</span> child.tag <span class="op">==</span> <span class="st">"complete_json_suffix_v2"</span>:</span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(child.text)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+
+${output_schema}
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
+
+Here are examples of simple (XML, JSON) pairs that show the expected behavior:
+- `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`
+- `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
+- `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index" format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`
+</code></pre>
+</div>
+</div>
+<p>This gives us the same prompt as before but we can see <code>${output_schema}</code> is not populated with a schema yet.</p>
+<p>so we can deduce that the Guardrails’s <code>Guard</code> is responsible for: - producing the <code>output_schema</code> from the pydantic model - replacing <code>${output_schema}</code> with the produced schema</p>
+<p>Let’s inspect the <code>Guard</code> class to see what it is composed from:</p>
+<div class="cell" data-execution_count="58">
+<div class="sourceCode cell-code" id="cb14" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a>gd.Guard?</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>Init signature:
+gd.Guard(
+    rail: guardrails.rail.Rail,
+    num_reasks: int = None,
+    base_model: Optional[pydantic.main.BaseModel] = None,
+)
+Docstring:     
+The Guard class.
+
+This class is the main entry point for using Guardrails. It is
+initialized from one of the following class methods:
+
+- `from_rail`
+- `from_rail_string`
+- `from_pydantic`
+- `from_string`
+
+The `__call__`
+method functions as a wrapper around LLM APIs. It takes in an LLM
+API, and optional prompt parameters, and returns the raw output from
+the LLM and the validated output.
+Init docstring: Initialize the Guard.
+File:           ~/.pyenv/versions/3.10.8/envs/structured-output-llm-py310/lib/python3.10/site-packages/guardrails/guard.py
+Type:           type
+Subclasses:     </code></pre>
+</div>
+</div>
+<p>Every <code>Guard</code> object is composed of:</p>
+<ul>
+<li>a <code>Rail</code> object</li>
+<li>a setting <code>num_reasks</code> for how many attempts to re-ask the model in case of a failure</li>
+<li>the pydantic <code>base_model</code></li>
+</ul>
+<p>Looking at <code>Guard.from_pydantic</code> we can see that it is constructing the <code>Rail</code> object from the base_model</p>
+<div class="cell" data-execution_count="59">
+<div class="sourceCode cell-code" id="cb16" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>psource gd.Guard.from_pydantic</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>    @classmethod
+    def from_pydantic(
+        cls,
+        output_class: BaseModel,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        num_reasks: int = None,
+    ) -&gt; "Guard":
+        """Create a Guard instance from a Pydantic model and prompt."""
+        rail = Rail.from_pydantic(
+            output_class=output_class, prompt=prompt, instructions=instructions
+        )
+        return cls(rail, num_reasks=num_reasks, base_model=output_class)</code></pre>
+</div>
+</div>
+<p>If we construct the <code>Rail</code> object directly, we can see that it builds out the <code>output_schema</code> and updates the prompts for us</p>
+<div class="cell" data-execution_count="60">
+<div class="sourceCode cell-code" id="cb18" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>rail <span class="op">=</span> gd.Rail.from_pydantic(</span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>    instructions<span class="op">=</span>system_instructions,</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    prompt<span class="op">=</span>user_prompt,</span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    output_class<span class="op">=</span>IntegerAnswer,</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"system prompt"</span>, rail.instructions)</span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"user prompt"</span>, rail.prompt)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>system prompt 
+You are a helpful assistant only capable of communicating with valid JSON, and no other text.
+
+user prompt 
+${query}
+
+
+Given below is XML that describes the information to extract from this document and the tags to extract it into.
+
+&lt;output&gt;
+    &lt;integer name="value" description="The answer to the question."/&gt;
+&lt;/output&gt;
+
+
+ONLY return a valid JSON object (no other text is necessary), where the key of the field in JSON is the `name` attribute of the corresponding XML, and the value is of the type specified by the corresponding XML's tag. The JSON MUST conform to the XML format, including any types and format requests e.g. requests for lists, objects and specific types. Be correct and concise.
+
+Here are examples of simple (XML, JSON) pairs that show the expected behavior:
+- `&lt;string name='foo' format='two-words lower-case' /&gt;` =&gt; `{'foo': 'example one'}`
+- `&lt;list name='bar'&gt;&lt;string format='upper-case' /&gt;&lt;/list&gt;` =&gt; `{"bar": ['STRING ONE', 'STRING TWO', etc.]}`
+- `&lt;object name='baz'&gt;&lt;string name="foo" format="capitalize two-words" /&gt;&lt;integer name="index" format="1-indexed" /&gt;&lt;/object&gt;` =&gt; `{'baz': {'foo': 'Some String', 'index': 1}}`
+
+</code></pre>
+</div>
+</div>
+<p>Let’s inspect <code>gd.Rail.from_pydantic</code> more closely</p>
+<div class="cell" data-execution_count="61">
+<div class="sourceCode cell-code" id="cb20" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a><span class="op">%</span>psource gd.Rail.from_pydantic</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>    @classmethod
+    def from_pydantic(
+        cls,
+        output_class: BaseModel,
+        prompt: Optional[str] = None,
+        instructions: Optional[str] = None,
+        reask_prompt: Optional[str] = None,
+        reask_instructions: Optional[str] = None,
+    ):
+        xml = generate_xml_code(
+            output_class=output_class,
+            prompt=prompt,
+            instructions=instructions,
+            reask_prompt=reask_prompt,
+            reask_instructions=reask_instructions,
+        )
+        return cls.from_xml(xml)</code></pre>
+</div>
+</div>
+<p>It relies on a core function called <code>generate_xml_code</code> that will produce XML code from the pydantic model. Here is a the docstring for <code>generate_xml_code</code> - note that it calls the generated XML code - the XML RAIL Spec - RAIL is short for “Reliable AI Language”</p>
+<div class="cell" data-execution_count="62">
+<div class="sourceCode cell-code" id="cb22" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> guardrails.rail <span class="im">import</span> generate_xml_code</span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(generate_xml_code.__doc__)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>Generate XML RAIL Spec from a pydantic model and a prompt.
+
+    Parameters: Arguments:
+        prompt (str): The prompt for this RAIL spec.
+        output_class (BaseModel, optional): The Pydantic model that represents the desired output schema.  Do not specify if using a string schema. Defaults to None.
+        instructions (str, optional): Instructions for chat models. Defaults to None.
+        reask_prompt (str, optional): An alternative prompt to use during reasks. Defaults to None.
+        reask_instructions (str, optional): Alternative instructions to use during reasks. Defaults to None.
+        validators (List[Validator], optional): The list of validators to apply to the string schema. Do not specify if using a Pydantic model. Defaults to None.
+        description (str, optional): The description for a string schema. Do not specify if using a Pydantic model. Defaults to None.
+    </code></pre>
+</div>
+</div>
+</section>
+<section id="using-our-built-guard-object-to-prompt-a-language-model" class="level3">
+<h3 class="anchored" data-anchor-id="using-our-built-guard-object-to-prompt-a-language-model">Using our built Guard object to prompt a language model</h3>
 <p>Next we use the guard object to call our language model.</p>
-<p>The guard object is a wrapper around the language model that will perform the following steps: - Prepare the prompt using the template and variables - Call the language model - Parse the output using the schema - If the output doesn’t match the schema - it will proceed to perfrom a corrective action - By default the corrective action is to re-prompt the model asking it to resolve the issue - it will repeat this process until the output matches the schema or until a maximum number of attempts is reached. - The result is returned as both a string and a structured object</p>
-<p>Ok now let’s try it out!</p>
-<div class="cell" data-execution_count="76">
-<div class="sourceCode cell-code" id="cb12" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
-<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> warnings.catch_warnings():</span>
-<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ignore the UserWarning about Instructions do not have any variables</span></span>
-<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>    warnings.filterwarnings(<span class="st">"ignore"</span>, category<span class="op">=</span><span class="pp">UserWarning</span>)</span>
-<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>    raw_llm_output, validated_output <span class="op">=</span> guard(</span>
-<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>        llm_api<span class="op">=</span>openai.Completion.create,</span>
-<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>        prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
-<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>        num_reasks<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
-<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
-<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb12-14"><a href="#cb12-14" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb12-15"><a href="#cb12-15" aria-hidden="true" tabindex="-1"></a>validated_output</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="76">
+<section id="happy-path-our-system-is-able-to-parse-the-json-and-return-the-answer." class="level4">
+<h4 class="anchored" data-anchor-id="happy-path-our-system-is-able-to-parse-the-json-and-return-the-answer.">Happy Path: Our system is able to parse the JSON and return the answer.</h4>
+<div class="cell" data-execution_count="63">
+<div class="sourceCode cell-code" id="cb24" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> warnings</span>
+<span id="cb24-2"><a href="#cb24-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-3"><a href="#cb24-3" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> warnings.catch_warnings():</span>
+<span id="cb24-4"><a href="#cb24-4" aria-hidden="true" tabindex="-1"></a>    <span class="co"># ignore the GuardrailsAI UserWarning</span></span>
+<span id="cb24-5"><a href="#cb24-5" aria-hidden="true" tabindex="-1"></a>    warnings.filterwarnings(<span class="st">"ignore"</span>, category<span class="op">=</span><span class="pp">UserWarning</span>)</span>
+<span id="cb24-6"><a href="#cb24-6" aria-hidden="true" tabindex="-1"></a>    </span>
+<span id="cb24-7"><a href="#cb24-7" aria-hidden="true" tabindex="-1"></a>    raw_llm_output, validated_output <span class="op">=</span> guard(</span>
+<span id="cb24-8"><a href="#cb24-8" aria-hidden="true" tabindex="-1"></a>        llm_api<span class="op">=</span>openai.Completion.create,</span>
+<span id="cb24-9"><a href="#cb24-9" aria-hidden="true" tabindex="-1"></a>        prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
+<span id="cb24-10"><a href="#cb24-10" aria-hidden="true" tabindex="-1"></a>        num_reasks<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb24-11"><a href="#cb24-11" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
+<span id="cb24-12"><a href="#cb24-12" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="cb24-13"><a href="#cb24-13" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb24-14"><a href="#cb24-14" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb24-15"><a href="#cb24-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb24-16"><a href="#cb24-16" aria-hidden="true" tabindex="-1"></a>validated_output</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="63">
 <pre data-code-line-numbers=""><code>{'value': 2}</code></pre>
 </div>
 </div>
-<p>Now let’s mock the case when our language model will return a non-JSON response.</p>
-<div class="cell" data-execution_count="79">
-<div class="sourceCode cell-code" id="cb14" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> unittest.mock <span class="im">import</span> MagicMock, patch</span>
-<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>magic_mock <span class="op">=</span> MagicMock()</span>
-<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a>magic_mock.return_value <span class="op">=</span> {</span>
-<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"object"</span>: <span class="st">"chat.completion"</span>,</span>
-<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
-<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"index"</span>: <span class="dv">0</span>,</span>
-<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>            <span class="st">"text"</span>: <span class="st">'{"value": "the answer is 2"}'</span>,</span>
-<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
-<span id="cb14-11"><a href="#cb14-11" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb14-12"><a href="#cb14-12" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb14-13"><a href="#cb14-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
-<span id="cb14-14"><a href="#cb14-14" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb14-15"><a href="#cb14-15" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-16"><a href="#cb14-16" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> patch(<span class="st">"openai.Completion.create"</span>, magic_mock):</span>
-<span id="cb14-17"><a href="#cb14-17" aria-hidden="true" tabindex="-1"></a>    raw_llm_output, validated_output <span class="op">=</span> guard(</span>
-<span id="cb14-18"><a href="#cb14-18" aria-hidden="true" tabindex="-1"></a>        llm_api<span class="op">=</span>openai.Completion.create,</span>
-<span id="cb14-19"><a href="#cb14-19" aria-hidden="true" tabindex="-1"></a>        prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
-<span id="cb14-20"><a href="#cb14-20" aria-hidden="true" tabindex="-1"></a>        num_reasks<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb14-21"><a href="#cb14-21" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
-<span id="cb14-22"><a href="#cb14-22" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
-<span id="cb14-23"><a href="#cb14-23" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb14-24"><a href="#cb14-24" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb14-25"><a href="#cb14-25" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-26"><a href="#cb14-26" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="ss">f"</span><span class="sc">{</span>raw_llm_output<span class="op">=</span><span class="sc">}</span><span class="ss">"</span>)</span>
-<span id="cb14-27"><a href="#cb14-27" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb14-28"><a href="#cb14-28" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span>.join(wrapper.wrap(<span class="bu">repr</span>(validated_output))))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>The guard object’s <code>__call__</code> will perform the following steps: - Update the prompt by replacing any remaining <code>${var}</code> with the appropriate values provided in <code>prompt_params</code> - Call the language model API - Parse the returned output using the schema - If the output doesn’t match the schema - it will proceed to perfrom a corrective action - By default the corrective action is to re-prompt the model asking it to resolve the issue - it will repeat this process until the output matches the schema or until a maximum number of attempts is reached. - The result is returned as both a string and a structured object</p>
+</section>
+<section id="unhappy-path-our-system-is-able-to-parse-the-json-and-return-the-answer." class="level4">
+<h4 class="anchored" data-anchor-id="unhappy-path-our-system-is-able-to-parse-the-json-and-return-the-answer.">UnHappy Path: Our system is able to parse the JSON and return the answer.</h4>
+<p>Now let’s mock our language model API to force a failure</p>
+<div class="cell" data-execution_count="76">
+<div class="sourceCode cell-code" id="cb26" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> unittest.mock <span class="im">import</span> MagicMock, patch</span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>magic_mock <span class="op">=</span> MagicMock()</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>magic_mock.return_value <span class="op">=</span> {</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>    <span class="st">"object"</span>: <span class="st">"chat.completion"</span>,</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"index"</span>: <span class="dv">0</span>,</span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a>            <span class="st">"text"</span>: <span class="st">'{"value": "the answer is 2"}'</span>,</span>
+<span id="cb26-10"><a href="#cb26-10" aria-hidden="true" tabindex="-1"></a>            <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
+<span id="cb26-11"><a href="#cb26-11" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb26-12"><a href="#cb26-12" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb26-13"><a href="#cb26-13" aria-hidden="true" tabindex="-1"></a>    <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
+<span id="cb26-14"><a href="#cb26-14" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb26-15"><a href="#cb26-15" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-16"><a href="#cb26-16" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> patch(<span class="st">"openai.Completion.create"</span>, magic_mock):</span>
+<span id="cb26-17"><a href="#cb26-17" aria-hidden="true" tabindex="-1"></a>    warnings.filterwarnings(<span class="st">"ignore"</span>, category<span class="op">=</span><span class="pp">UserWarning</span>)</span>
+<span id="cb26-18"><a href="#cb26-18" aria-hidden="true" tabindex="-1"></a>    raw_llm_output, validated_output <span class="op">=</span> guard(</span>
+<span id="cb26-19"><a href="#cb26-19" aria-hidden="true" tabindex="-1"></a>        llm_api<span class="op">=</span>openai.Completion.create,</span>
+<span id="cb26-20"><a href="#cb26-20" aria-hidden="true" tabindex="-1"></a>        prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
+<span id="cb26-21"><a href="#cb26-21" aria-hidden="true" tabindex="-1"></a>        num_reasks<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb26-22"><a href="#cb26-22" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
+<span id="cb26-23"><a href="#cb26-23" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="cb26-24"><a href="#cb26-24" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb26-25"><a href="#cb26-25" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb26-26"><a href="#cb26-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-27"><a href="#cb26-27" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">     "</span>.join(wrapper.wrap(<span class="bu">repr</span>(validated_output))))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>raw_llm_output='{"value": "the answer is 2"}'
-SkeletonReAsk(incorrect_value={'value': 'the answer is 2'},
-fail_results=[FailResult(outcome='fail', metadata=None,
-error_message='JSON does not match schema', fix_value=None)])</code></pre>
+<pre data-code-line-numbers=""><code>SkeletonReAsk(incorrect_value={'value': 'the answer is 2'},
+     fail_results=[FailResult(outcome='fail', metadata=None, error_message='JSON does
+     not match schema', fix_value=None)])</code></pre>
 </div>
 </div>
-<p>The returned response now indicates a failure due to an incorrect value. What happened is the first prompt looks exactly like the one we used above, but the second prompt is different. It is a prompt that is asking the model to resolve the issue by returning a JSON response.</p>
-<p>Given we mocked the model to return a non-JSON response, the model will fail to resolve the issue and will return a failure response.</p>
-<div class="cell" data-execution_count="57">
-<div class="sourceCode cell-code" id="cb16" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(<span class="st">"</span><span class="ch">\n</span><span class="st">"</span>.join(wrapper.wrap(magic_mock.call_args_list[<span class="dv">0</span>].kwargs[<span class="st">"prompt"</span>])))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</section>
+</section>
+<section id="advanced-features-in-guardrails" class="level3">
+<h3 class="anchored" data-anchor-id="advanced-features-in-guardrails">Advanced features in guardrails</h3>
+<section id="section" class="level4">
+<h4 class="anchored" data-anchor-id="section"></h4>
+</section>
+<section id="unhappy-path-introducing-guardrails-validators-and-on-fail-actions" class="level4">
+<h4 class="anchored" data-anchor-id="unhappy-path-introducing-guardrails-validators-and-on-fail-actions">UnHappy Path: Introducing Guardrails validators and on-fail actions</h4>
+<p>So what options do we have when the model fails to produce the output we want? Can we customize the corrective action? Can we do this on a per attribute basis?</p>
+<p>The answer is yes. We can define a guardrails validator for each attribute in our schema. The validator will be called on the parsed output and will return a boolean indicating whether the output is valid or not. If the output is not valid, we can define an on-fail action to perform. The on-fail action can be one of the <a href="https://docs.guardrailsai.com/concepts/output/#specifying-corrective-actions">following actions</a>:</p>
+<ul>
+<li><code>reask</code> Reask the LLM to generate an output that meets the quality criteria. The prompt used for reasking contains information about which quality criteria failed, which is auto-generated by the validator.</li>
+<li><code>fix</code> Programmatically fix the generated output to meet the quality criteria. E.g. for the formatter two-words, the programatic fix simply takes the first 2 words of the generated string.</li>
+<li><code>filter</code> Filter the incorrect value. This only filters the field that fails, and will return the rest of the generated output.</li>
+<li><code>refrain</code> Refrain from returning an output. If a formatter has the corrective action refrain, then on failure there will be a None output returned instead of the JSON.</li>
+<li><code>noop</code> Do nothing. The failure will still be recorded in the logs, but no corrective action will be taken.</li>
+<li><code>exception</code> Raise an exception when validation fails.</li>
+<li><code>fix_reask</code> First, fix the generated output deterministically, and then rerun validation with the deterministically fixed output. If validation fails, then perform reasking.</li>
+</ul>
+<p>Let’s try out the <code>ValidRange</code> validator with an <code>exception</code> on_fail action</p>
+<div class="cell" data-execution_count="77">
+<div class="sourceCode cell-code" id="cb28" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> guardrails.validators <span class="im">import</span> ValidRange</span>
+<span id="cb28-2"><a href="#cb28-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-3"><a href="#cb28-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Answer(BaseModel):</span>
+<span id="cb28-4"><a href="#cb28-4" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span> <span class="op">=</span> Field(</span>
+<span id="cb28-5"><a href="#cb28-5" aria-hidden="true" tabindex="-1"></a>        description<span class="op">=</span><span class="st">"The answer to the question."</span>,</span>
+<span id="cb28-6"><a href="#cb28-6" aria-hidden="true" tabindex="-1"></a>        validators<span class="op">=</span>[ValidRange(<span class="bu">min</span><span class="op">=</span><span class="dv">0</span>, on_fail<span class="op">=</span><span class="st">"exception"</span>)],</span>
+<span id="cb28-7"><a href="#cb28-7" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb28-8"><a href="#cb28-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-9"><a href="#cb28-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb28-10"><a href="#cb28-10" aria-hidden="true" tabindex="-1"></a>guard <span class="op">=</span> gd.Guard.from_pydantic(</span>
+<span id="cb28-11"><a href="#cb28-11" aria-hidden="true" tabindex="-1"></a>    output_class<span class="op">=</span>Answer, prompt<span class="op">=</span>user_prompt, instructions<span class="op">=</span>system_instructions</span>
+<span id="cb28-12"><a href="#cb28-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>If the language model returns a value that is not a positive integer, an exception will be raised. Let’s mock the model to return a negative integer.</p>
+<div class="cell" data-execution_count="79">
+<div class="sourceCode cell-code" id="cb29" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>magic_mock.return_value <span class="op">=</span> {</span>
+<span id="cb29-2"><a href="#cb29-2" aria-hidden="true" tabindex="-1"></a>    <span class="st">"id"</span>: <span class="st">"chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl"</span>,</span>
+<span id="cb29-3"><a href="#cb29-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
+<span id="cb29-4"><a href="#cb29-4" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb29-5"><a href="#cb29-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">"index"</span>: <span class="dv">0</span>,</span>
+<span id="cb29-6"><a href="#cb29-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"text"</span>: <span class="st">'{"value": "-2"}'</span>,</span>
+<span id="cb29-7"><a href="#cb29-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
+<span id="cb29-8"><a href="#cb29-8" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb29-9"><a href="#cb29-9" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb29-10"><a href="#cb29-10" aria-hidden="true" tabindex="-1"></a>    <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
+<span id="cb29-11"><a href="#cb29-11" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb29-12"><a href="#cb29-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb29-13"><a href="#cb29-13" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> patch(<span class="st">"openai.Completion.create"</span>, magic_mock):</span>
+<span id="cb29-14"><a href="#cb29-14" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
+<span id="cb29-15"><a href="#cb29-15" aria-hidden="true" tabindex="-1"></a>        raw_llm_output, validated_output <span class="op">=</span> guard(</span>
+<span id="cb29-16"><a href="#cb29-16" aria-hidden="true" tabindex="-1"></a>            llm_api<span class="op">=</span>openai.Completion.create,</span>
+<span id="cb29-17"><a href="#cb29-17" aria-hidden="true" tabindex="-1"></a>            prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
+<span id="cb29-18"><a href="#cb29-18" aria-hidden="true" tabindex="-1"></a>            num_reasks<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb29-19"><a href="#cb29-19" aria-hidden="true" tabindex="-1"></a>            engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
+<span id="cb29-20"><a href="#cb29-20" aria-hidden="true" tabindex="-1"></a>            max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="cb29-21"><a href="#cb29-21" aria-hidden="true" tabindex="-1"></a>            temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb29-22"><a href="#cb29-22" aria-hidden="true" tabindex="-1"></a>        )</span>
+<span id="cb29-23"><a href="#cb29-23" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
+<span id="cb29-24"><a href="#cb29-24" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="bu">type</span>(e))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>&lt;class 'guardrails.validators.ValidatorError'&gt;</code></pre>
+</div>
+</div>
+<p>As you can see a ValidationError is now raised.</p>
+<p>Next we inspect the <code>re-ask</code> on-fail action behavior by mocking our model to first return an invalid answer, and then a valid answer.</p>
+<div class="cell" data-execution_count="94">
+<div class="sourceCode cell-code" id="cb31" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Answer(BaseModel):</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span> <span class="op">=</span> Field(</span>
+<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>        description<span class="op">=</span><span class="st">"The answer to the question."</span>,</span>
+<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>        validators<span class="op">=</span>[ValidRange(<span class="bu">min</span><span class="op">=</span><span class="dv">0</span>, <span class="bu">max</span><span class="op">=</span><span class="dv">10</span>, on_fail<span class="op">=</span><span class="st">"reask"</span>)],</span>
+<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>guard <span class="op">=</span> gd.Guard.from_pydantic(</span>
+<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>    output_class<span class="op">=</span>Answer, prompt<span class="op">=</span>user_prompt, instructions<span class="op">=</span>system_instructions</span>
+<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb31-11"><a href="#cb31-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-12"><a href="#cb31-12" aria-hidden="true" tabindex="-1"></a>magic_mock <span class="op">=</span> MagicMock()</span>
+<span id="cb31-13"><a href="#cb31-13" aria-hidden="true" tabindex="-1"></a>magic_mock.side_effect <span class="op">=</span> [</span>
+<span id="cb31-14"><a href="#cb31-14" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb31-15"><a href="#cb31-15" aria-hidden="true" tabindex="-1"></a>        <span class="st">"id"</span>: <span class="st">"chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl"</span>,</span>
+<span id="cb31-16"><a href="#cb31-16" aria-hidden="true" tabindex="-1"></a>        <span class="st">"choices"</span>: [</span>
+<span id="cb31-17"><a href="#cb31-17" aria-hidden="true" tabindex="-1"></a>            {</span>
+<span id="cb31-18"><a href="#cb31-18" aria-hidden="true" tabindex="-1"></a>                <span class="st">"index"</span>: <span class="dv">0</span>,</span>
+<span id="cb31-19"><a href="#cb31-19" aria-hidden="true" tabindex="-1"></a>                <span class="st">"text"</span>: <span class="st">'{"value": "-2"}'</span>,</span>
+<span id="cb31-20"><a href="#cb31-20" aria-hidden="true" tabindex="-1"></a>                <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
+<span id="cb31-21"><a href="#cb31-21" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb31-22"><a href="#cb31-22" aria-hidden="true" tabindex="-1"></a>        ],</span>
+<span id="cb31-23"><a href="#cb31-23" aria-hidden="true" tabindex="-1"></a>        <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
+<span id="cb31-24"><a href="#cb31-24" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb31-25"><a href="#cb31-25" aria-hidden="true" tabindex="-1"></a>    {</span>
+<span id="cb31-26"><a href="#cb31-26" aria-hidden="true" tabindex="-1"></a>        <span class="st">"id"</span>: <span class="st">"chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl"</span>,</span>
+<span id="cb31-27"><a href="#cb31-27" aria-hidden="true" tabindex="-1"></a>        <span class="st">"choices"</span>: [</span>
+<span id="cb31-28"><a href="#cb31-28" aria-hidden="true" tabindex="-1"></a>            {</span>
+<span id="cb31-29"><a href="#cb31-29" aria-hidden="true" tabindex="-1"></a>                <span class="st">"index"</span>: <span class="dv">0</span>,</span>
+<span id="cb31-30"><a href="#cb31-30" aria-hidden="true" tabindex="-1"></a>                <span class="st">"text"</span>: <span class="st">'{"value": "2"}'</span>,</span>
+<span id="cb31-31"><a href="#cb31-31" aria-hidden="true" tabindex="-1"></a>                <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
+<span id="cb31-32"><a href="#cb31-32" aria-hidden="true" tabindex="-1"></a>            }</span>
+<span id="cb31-33"><a href="#cb31-33" aria-hidden="true" tabindex="-1"></a>        ],</span>
+<span id="cb31-34"><a href="#cb31-34" aria-hidden="true" tabindex="-1"></a>        <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
+<span id="cb31-35"><a href="#cb31-35" aria-hidden="true" tabindex="-1"></a>    },</span>
+<span id="cb31-36"><a href="#cb31-36" aria-hidden="true" tabindex="-1"></a>]</span>
+<span id="cb31-37"><a href="#cb31-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-38"><a href="#cb31-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb31-39"><a href="#cb31-39" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> patch(<span class="st">"openai.Completion.create"</span>, magic_mock):</span>
+<span id="cb31-40"><a href="#cb31-40" aria-hidden="true" tabindex="-1"></a>    raw_llm_output, validated_output <span class="op">=</span> guard(</span>
+<span id="cb31-41"><a href="#cb31-41" aria-hidden="true" tabindex="-1"></a>        llm_api<span class="op">=</span>openai.Completion.create,</span>
+<span id="cb31-42"><a href="#cb31-42" aria-hidden="true" tabindex="-1"></a>        prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
+<span id="cb31-43"><a href="#cb31-43" aria-hidden="true" tabindex="-1"></a>        num_reasks<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb31-44"><a href="#cb31-44" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
+<span id="cb31-45"><a href="#cb31-45" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="cb31-46"><a href="#cb31-46" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb31-47"><a href="#cb31-47" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb31-48"><a href="#cb31-48" aria-hidden="true" tabindex="-1"></a>validated_output</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="94">
+<pre data-code-line-numbers=""><code>{'value': 2}</code></pre>
+</div>
+</div>
+<p>Reasking resolved the issue and returned the correct value ! Lets inpsect the reask prompt that was used</p>
+<div class="cell" data-execution_count="99">
+<div class="sourceCode cell-code" id="cb33" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(magic_mock.call_args[<span class="dv">1</span>][<span class="st">"prompt"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
 <pre data-code-line-numbers=""><code>
 You are a helpful assistant only capable of communicating with valid JSON, and no other text.
@@ -314,12 +582,12 @@ Here are examples of simple (XML, JSON) pairs that show the expected behavior:
 I was given the following JSON response, which had problems due to incorrect values.
 
 {
-  "incorrect_value": {
-    "value": "the answer is 2"
-  },
-  "error_messages": [
-    "JSON does not match schema"
-  ]
+  "value": {
+    "incorrect_value": -2,
+    "error_messages": [
+      "Value -2 is less than 0."
+    ]
+  }
 }
 
 Help me correct the incorrect values based on the given error messages.
@@ -327,7 +595,7 @@ Help me correct the incorrect values based on the given error messages.
 Given below is XML that describes the information to extract from this document and the tags to extract it into.
 
 &lt;output&gt;
-    &lt;integer name="value" description="The answer to the question."/&gt;
+    &lt;integer name="value" format="valid-range: min=0 max=10" description="The answer to the question."/&gt;
 &lt;/output&gt;
 
 
@@ -339,61 +607,127 @@ Json Output:
 </code></pre>
 </div>
 </div>
-</section>
-<section id="advanced-features-in-guardrails" class="level3">
-<h3 class="anchored" data-anchor-id="advanced-features-in-guardrails">Advanced features in guardrails</h3>
-<section id="section" class="level4">
-<h4 class="anchored" data-anchor-id="section"></h4>
-</section>
-</section>
-<section id="introduce-validators-and-corrective-action" class="level3">
-<h3 class="anchored" data-anchor-id="introduce-validators-and-corrective-action">Introduce validators and corrective action</h3>
-<p>For more involved validation than the return type, you can use the validators that guardrails provides out of the box, or we can define our own validators. To show how this works, let’s define a validator that checks that the sum of the two numbers is greater than 0.</p>
-<div class="cell" data-execution_count="61">
-<div class="sourceCode cell-code" id="cb18" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> guardrails.validators <span class="im">import</span> ValidRange</span>
-<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Answer(BaseModel):</span>
-<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span> <span class="op">=</span> Field(</span>
-<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>        description<span class="op">=</span><span class="st">"The answer to the question."</span>,</span>
-<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>        validators<span class="op">=</span>[ValidRange(<span class="bu">min</span><span class="op">=</span><span class="dv">0</span>, on_fail<span class="op">=</span><span class="st">"exception"</span>)],</span>
-<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    )</span>
-<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>guard <span class="op">=</span> gd.Guard.from_pydantic(</span>
-<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    output_class<span class="op">=</span>Answer, prompt<span class="op">=</span>prompt, instructions<span class="op">=</span>instructions</span>
-<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<p>If the language model returns a value that is not a positive integer, an exception will be raised. Let’s mock the model to return a negative integer.</p>
-<div class="cell" data-execution_count="62">
-<div class="sourceCode cell-code" id="cb19" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>magic_mock <span class="op">=</span> MagicMock()</span>
-<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>magic_mock.return_value <span class="op">=</span> {</span>
-<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>    <span class="st">"id"</span>: <span class="st">"chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl"</span>,</span>
-<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
-<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"index"</span>: <span class="dv">0</span>,</span>
-<span id="cb19-7"><a href="#cb19-7" aria-hidden="true" tabindex="-1"></a>            <span class="st">"text"</span>: <span class="st">'{"value": "-2"}'</span>,</span>
-<span id="cb19-8"><a href="#cb19-8" aria-hidden="true" tabindex="-1"></a>            <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
-<span id="cb19-9"><a href="#cb19-9" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb19-10"><a href="#cb19-10" aria-hidden="true" tabindex="-1"></a>    ],</span>
-<span id="cb19-11"><a href="#cb19-11" aria-hidden="true" tabindex="-1"></a>    <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
-<span id="cb19-12"><a href="#cb19-12" aria-hidden="true" tabindex="-1"></a>}</span>
-<span id="cb19-13"><a href="#cb19-13" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb19-14"><a href="#cb19-14" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> patch(<span class="st">"openai.Completion.create"</span>, magic_mock):</span>
-<span id="cb19-15"><a href="#cb19-15" aria-hidden="true" tabindex="-1"></a>    <span class="cf">try</span>:</span>
-<span id="cb19-16"><a href="#cb19-16" aria-hidden="true" tabindex="-1"></a>        raw_llm_output, validated_output <span class="op">=</span> guard(</span>
-<span id="cb19-17"><a href="#cb19-17" aria-hidden="true" tabindex="-1"></a>            llm_api<span class="op">=</span>openai.Completion.create,</span>
-<span id="cb19-18"><a href="#cb19-18" aria-hidden="true" tabindex="-1"></a>            prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
-<span id="cb19-19"><a href="#cb19-19" aria-hidden="true" tabindex="-1"></a>            num_reasks<span class="op">=</span><span class="dv">1</span>,</span>
-<span id="cb19-20"><a href="#cb19-20" aria-hidden="true" tabindex="-1"></a>            engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
-<span id="cb19-21"><a href="#cb19-21" aria-hidden="true" tabindex="-1"></a>            max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
-<span id="cb19-22"><a href="#cb19-22" aria-hidden="true" tabindex="-1"></a>            temperature<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb19-23"><a href="#cb19-23" aria-hidden="true" tabindex="-1"></a>        )</span>
-<span id="cb19-24"><a href="#cb19-24" aria-hidden="true" tabindex="-1"></a>    <span class="cf">except</span> <span class="pp">Exception</span> <span class="im">as</span> e:</span>
-<span id="cb19-25"><a href="#cb19-25" aria-hidden="true" tabindex="-1"></a>        <span class="bu">print</span>(<span class="bu">type</span>(e))</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<p>Note that for some reason Guardrails AI doesn’t chose to add the initial query 1+1=? to the prompt which is strange given it should be important context for the model.</p>
+<p>If instead we used <code>fix</code> instead of <code>reask</code> then validator will try to coerce a value of 0 or 10 depending on which is closer</p>
+<div class="cell" data-execution_count="102">
+<div class="sourceCode cell-code" id="cb35" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Answer(BaseModel):</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span> <span class="op">=</span> Field(</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>        description<span class="op">=</span><span class="st">"The answer to the question."</span>,</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a>        validators<span class="op">=</span>[ValidRange(<span class="bu">min</span><span class="op">=</span><span class="dv">0</span>, <span class="bu">max</span><span class="op">=</span><span class="dv">10</span>, on_fail<span class="op">=</span><span class="st">"fix"</span>)],</span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb35-6"><a href="#cb35-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-7"><a href="#cb35-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-8"><a href="#cb35-8" aria-hidden="true" tabindex="-1"></a>guard <span class="op">=</span> gd.Guard.from_pydantic(</span>
+<span id="cb35-9"><a href="#cb35-9" aria-hidden="true" tabindex="-1"></a>    output_class<span class="op">=</span>Answer, prompt<span class="op">=</span>user_prompt, instructions<span class="op">=</span>system_instructions</span>
+<span id="cb35-10"><a href="#cb35-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb35-11"><a href="#cb35-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-12"><a href="#cb35-12" aria-hidden="true" tabindex="-1"></a>magic_mock <span class="op">=</span> MagicMock()</span>
+<span id="cb35-13"><a href="#cb35-13" aria-hidden="true" tabindex="-1"></a>magic_mock.return_value <span class="op">=</span> {</span>
+<span id="cb35-14"><a href="#cb35-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"id"</span>: <span class="st">"chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl"</span>,</span>
+<span id="cb35-15"><a href="#cb35-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
+<span id="cb35-16"><a href="#cb35-16" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb35-17"><a href="#cb35-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"index"</span>: <span class="dv">0</span>,</span>
+<span id="cb35-18"><a href="#cb35-18" aria-hidden="true" tabindex="-1"></a>            <span class="st">"text"</span>: <span class="st">'{"value": "-2"}'</span>,</span>
+<span id="cb35-19"><a href="#cb35-19" aria-hidden="true" tabindex="-1"></a>            <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
+<span id="cb35-20"><a href="#cb35-20" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb35-21"><a href="#cb35-21" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb35-22"><a href="#cb35-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
+<span id="cb35-23"><a href="#cb35-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb35-24"><a href="#cb35-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-25"><a href="#cb35-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-26"><a href="#cb35-26" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> patch(<span class="st">"openai.Completion.create"</span>, magic_mock):</span>
+<span id="cb35-27"><a href="#cb35-27" aria-hidden="true" tabindex="-1"></a>    raw_llm_output, validated_output <span class="op">=</span> guard(</span>
+<span id="cb35-28"><a href="#cb35-28" aria-hidden="true" tabindex="-1"></a>        llm_api<span class="op">=</span>openai.Completion.create,</span>
+<span id="cb35-29"><a href="#cb35-29" aria-hidden="true" tabindex="-1"></a>        prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
+<span id="cb35-30"><a href="#cb35-30" aria-hidden="true" tabindex="-1"></a>        num_reasks<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb35-31"><a href="#cb35-31" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
+<span id="cb35-32"><a href="#cb35-32" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="cb35-33"><a href="#cb35-33" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb35-34"><a href="#cb35-34" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb35-35"><a href="#cb35-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-36"><a href="#cb35-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(validated_output)</span>
+<span id="cb35-37"><a href="#cb35-37" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-38"><a href="#cb35-38" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-39"><a href="#cb35-39" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-40"><a href="#cb35-40" aria-hidden="true" tabindex="-1"></a>magic_mock.return_value <span class="op">=</span> {</span>
+<span id="cb35-41"><a href="#cb35-41" aria-hidden="true" tabindex="-1"></a>    <span class="st">"id"</span>: <span class="st">"chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl"</span>,</span>
+<span id="cb35-42"><a href="#cb35-42" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
+<span id="cb35-43"><a href="#cb35-43" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb35-44"><a href="#cb35-44" aria-hidden="true" tabindex="-1"></a>            <span class="st">"index"</span>: <span class="dv">0</span>,</span>
+<span id="cb35-45"><a href="#cb35-45" aria-hidden="true" tabindex="-1"></a>            <span class="st">"text"</span>: <span class="st">'{"value": "14"}'</span>,</span>
+<span id="cb35-46"><a href="#cb35-46" aria-hidden="true" tabindex="-1"></a>            <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
+<span id="cb35-47"><a href="#cb35-47" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb35-48"><a href="#cb35-48" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb35-49"><a href="#cb35-49" aria-hidden="true" tabindex="-1"></a>    <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
+<span id="cb35-50"><a href="#cb35-50" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb35-51"><a href="#cb35-51" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-52"><a href="#cb35-52" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-53"><a href="#cb35-53" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> patch(<span class="st">"openai.Completion.create"</span>, magic_mock):</span>
+<span id="cb35-54"><a href="#cb35-54" aria-hidden="true" tabindex="-1"></a>    raw_llm_output, validated_output <span class="op">=</span> guard(</span>
+<span id="cb35-55"><a href="#cb35-55" aria-hidden="true" tabindex="-1"></a>        llm_api<span class="op">=</span>openai.Completion.create,</span>
+<span id="cb35-56"><a href="#cb35-56" aria-hidden="true" tabindex="-1"></a>        prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
+<span id="cb35-57"><a href="#cb35-57" aria-hidden="true" tabindex="-1"></a>        num_reasks<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb35-58"><a href="#cb35-58" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
+<span id="cb35-59"><a href="#cb35-59" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="cb35-60"><a href="#cb35-60" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb35-61"><a href="#cb35-61" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb35-62"><a href="#cb35-62" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-63"><a href="#cb35-63" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(validated_output)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
 <div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>&lt;class 'guardrails.validators.ValidatorError'&gt;</code></pre>
+<pre data-code-line-numbers=""><code>{'value': '0'}
+{'value': '10'}</code></pre>
 </div>
 </div>
+<p>And if we use <code>filter</code> as the corrective action will return an empty dictionary given we only inspect one key named “value”</p>
+<div class="cell" data-execution_count="103">
+<div class="sourceCode cell-code" id="cb37" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Answer(BaseModel):</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a>    value: <span class="bu">int</span> <span class="op">=</span> Field(</span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a>        description<span class="op">=</span><span class="st">"The answer to the question."</span>,</span>
+<span id="cb37-4"><a href="#cb37-4" aria-hidden="true" tabindex="-1"></a>        validators<span class="op">=</span>[ValidRange(<span class="bu">min</span><span class="op">=</span><span class="dv">0</span>, <span class="bu">max</span><span class="op">=</span><span class="dv">10</span>, on_fail<span class="op">=</span><span class="st">"filter"</span>)],</span>
+<span id="cb37-5"><a href="#cb37-5" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb37-6"><a href="#cb37-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-7"><a href="#cb37-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-8"><a href="#cb37-8" aria-hidden="true" tabindex="-1"></a>guard <span class="op">=</span> gd.Guard.from_pydantic(</span>
+<span id="cb37-9"><a href="#cb37-9" aria-hidden="true" tabindex="-1"></a>    output_class<span class="op">=</span>Answer, prompt<span class="op">=</span>user_prompt, instructions<span class="op">=</span>system_instructions</span>
+<span id="cb37-10"><a href="#cb37-10" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb37-11"><a href="#cb37-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-12"><a href="#cb37-12" aria-hidden="true" tabindex="-1"></a>magic_mock <span class="op">=</span> MagicMock()</span>
+<span id="cb37-13"><a href="#cb37-13" aria-hidden="true" tabindex="-1"></a>magic_mock.return_value <span class="op">=</span> {</span>
+<span id="cb37-14"><a href="#cb37-14" aria-hidden="true" tabindex="-1"></a>    <span class="st">"id"</span>: <span class="st">"chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl"</span>,</span>
+<span id="cb37-15"><a href="#cb37-15" aria-hidden="true" tabindex="-1"></a>    <span class="st">"choices"</span>: [</span>
+<span id="cb37-16"><a href="#cb37-16" aria-hidden="true" tabindex="-1"></a>        {</span>
+<span id="cb37-17"><a href="#cb37-17" aria-hidden="true" tabindex="-1"></a>            <span class="st">"index"</span>: <span class="dv">0</span>,</span>
+<span id="cb37-18"><a href="#cb37-18" aria-hidden="true" tabindex="-1"></a>            <span class="st">"text"</span>: <span class="st">'{"value": "-2"}'</span>,</span>
+<span id="cb37-19"><a href="#cb37-19" aria-hidden="true" tabindex="-1"></a>            <span class="st">"finish_reason"</span>: <span class="st">"stop"</span>,</span>
+<span id="cb37-20"><a href="#cb37-20" aria-hidden="true" tabindex="-1"></a>        }</span>
+<span id="cb37-21"><a href="#cb37-21" aria-hidden="true" tabindex="-1"></a>    ],</span>
+<span id="cb37-22"><a href="#cb37-22" aria-hidden="true" tabindex="-1"></a>    <span class="st">"usage"</span>: {<span class="st">"prompt_tokens"</span>: <span class="dv">18</span>, <span class="st">"completion_tokens"</span>: <span class="dv">12</span>, <span class="st">"total_tokens"</span>: <span class="dv">30</span>},</span>
+<span id="cb37-23"><a href="#cb37-23" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb37-24"><a href="#cb37-24" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-25"><a href="#cb37-25" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-26"><a href="#cb37-26" aria-hidden="true" tabindex="-1"></a><span class="cf">with</span> patch(<span class="st">"openai.Completion.create"</span>, magic_mock):</span>
+<span id="cb37-27"><a href="#cb37-27" aria-hidden="true" tabindex="-1"></a>    raw_llm_output, validated_output <span class="op">=</span> guard(</span>
+<span id="cb37-28"><a href="#cb37-28" aria-hidden="true" tabindex="-1"></a>        llm_api<span class="op">=</span>openai.Completion.create,</span>
+<span id="cb37-29"><a href="#cb37-29" aria-hidden="true" tabindex="-1"></a>        prompt_params<span class="op">=</span>{<span class="st">"query"</span>: query},</span>
+<span id="cb37-30"><a href="#cb37-30" aria-hidden="true" tabindex="-1"></a>        num_reasks<span class="op">=</span><span class="dv">1</span>,</span>
+<span id="cb37-31"><a href="#cb37-31" aria-hidden="true" tabindex="-1"></a>        engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
+<span id="cb37-32"><a href="#cb37-32" aria-hidden="true" tabindex="-1"></a>        max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
+<span id="cb37-33"><a href="#cb37-33" aria-hidden="true" tabindex="-1"></a>        temperature<span class="op">=</span><span class="dv">0</span>,</span>
+<span id="cb37-34"><a href="#cb37-34" aria-hidden="true" tabindex="-1"></a>    )</span>
+<span id="cb37-35"><a href="#cb37-35" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-36"><a href="#cb37-36" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(validated_output)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-stdout">
+<pre data-code-line-numbers=""><code>{}</code></pre>
+</div>
+</div>
+</section>
+</section>
+</section>
+<section id="time-for-a-more-complex-example" class="level2">
+<h2 class="anchored" data-anchor-id="time-for-a-more-complex-example">Time for a more complex example</h2>
+<section id="routing-between-two-possible-response-schemas" class="level3">
+<h3 class="anchored" data-anchor-id="routing-between-two-possible-response-schemas">Routing between two possible response schemas</h3>
+<p>For instance if you have a language model that can return more than one possible schema, you can use a choice validator to route between the schemas.</p>
 </section>
 <section id="complex-validators-out-of-the-box" class="level3">
 <h3 class="anchored" data-anchor-id="complex-validators-out-of-the-box">Complex validators out of the box</h3>
@@ -403,10 +737,6 @@ Json Output:
 <section id="custom-validators" class="level3">
 <h3 class="anchored" data-anchor-id="custom-validators">Custom validators</h3>
 <p>Earlier this year there was a <a href="https://www.youtube.com/watch?v=iWhlrkfJrCQ&amp;ab_channel=GothamChess">popular video of how ChatGPT couldn’t stick to performing legal chess moves</a>. Guardrails AI has an <a href="https://docs.guardrailsai.com/examples/valid_chess_moves/">example in progress</a> of how to use custom validators to enforce a legal chess game.</p>
-</section>
-<section id="routing-between-two-possible-response-schemas" class="level3">
-<h3 class="anchored" data-anchor-id="routing-between-two-possible-response-schemas">Routing between two possible response schemas</h3>
-<p>For instance if you have a language model that can return more than one possible schema, you can use a choice validator to route between the schemas.</p>
 </section>
 <section id="flexibility-of-the-guardrails-approach" class="level3">
 <h3 class="anchored" data-anchor-id="flexibility-of-the-guardrails-approach">Flexibility of the guardrails approach</h3>
@@ -431,228 +761,6 @@ Json Output:
 <li>Inheriting validators from pydantic models would be nice but support for it is still lacking.</li>
 <li>Using different models to perform correction</li>
 </ul>
-<div class="cell" data-execution_count="17">
-<div class="sourceCode cell-code" id="cb21" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>gd.</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-error">
-<pre data-code-line-numbers=""><code>SyntaxError: invalid syntax (2764988694.py, line 1)</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb23" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb23-1"><a href="#cb23-1" aria-hidden="true" tabindex="-1"></a>response</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="58">
-<pre data-code-line-numbers=""><code>&lt;OpenAIObject chat.completion id=chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl at 0x111287ce0&gt; JSON: {
-  "id": "chatcmpl-8CazZKUCp8KbiUt49J5x7eINiMlvl",
-  "object": "chat.completion",
-  "created": 1698012825,
-  "model": "gpt-3.5-turbo-0613",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "The integer answer to 1+1 is 2."
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 18,
-    "completion_tokens": 12,
-    "total_tokens": 30
-  }
-}</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb25" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb25-1"><a href="#cb25-1" aria-hidden="true" tabindex="-1"></a>raw_llm_output, validated_output <span class="op">=</span> guard(</span>
-<span id="cb25-2"><a href="#cb25-2" aria-hidden="true" tabindex="-1"></a>    openai.Completion.create,</span>
-<span id="cb25-3"><a href="#cb25-3" aria-hidden="true" tabindex="-1"></a>    prompt_params<span class="op">=</span>{<span class="st">"doctors_notes"</span>: doctors_notes},</span>
-<span id="cb25-4"><a href="#cb25-4" aria-hidden="true" tabindex="-1"></a>    engine<span class="op">=</span><span class="st">"text-davinci-003"</span>,</span>
-<span id="cb25-5"><a href="#cb25-5" aria-hidden="true" tabindex="-1"></a>    max_tokens<span class="op">=</span><span class="dv">1024</span>,</span>
-<span id="cb25-6"><a href="#cb25-6" aria-hidden="true" tabindex="-1"></a>    temperature<span class="op">=</span><span class="dv">0</span>,</span>
-<span id="cb25-7"><a href="#cb25-7" aria-hidden="true" tabindex="-1"></a>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb26" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>PatientInfo(gender<span class="op">=</span><span class="st">"a random string"</span>, age<span class="op">=</span><span class="dv">100241</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb27" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb27-1"><a href="#cb27-1" aria-hidden="true" tabindex="-1"></a>PatientInfo.parse_raw(raw_llm_output)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="50">
-<pre data-code-line-numbers=""><code>PatientInfo(gender='Male', age=49)</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb29" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb29-1"><a href="#cb29-1" aria-hidden="true" tabindex="-1"></a>PatientInfo.parse_obj(validated_output)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="51">
-<pre data-code-line-numbers=""><code>PatientInfo(gender='Male', age=49)</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb31" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> openai.ChatCompletion.create(</span>
-<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="st">"meta-llama/Llama-2-70b-chat-hf"</span>,</span>
-<span id="cb31-3"><a href="#cb31-3" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">=</span>[</span>
-<span id="cb31-4"><a href="#cb31-4" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb31-5"><a href="#cb31-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"You are a helpful assistant."</span>,</span>
-<span id="cb31-6"><a href="#cb31-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"Return an integer, 1+1=."</span>,</span>
-<span id="cb31-7"><a href="#cb31-7" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb31-8"><a href="#cb31-8" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb31-9"><a href="#cb31-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb31-10"><a href="#cb31-10" aria-hidden="true" tabindex="-1"></a>response</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="26">
-<pre data-code-line-numbers=""><code>&lt;OpenAIObject text_completion id=meta-llama/Llama-2-70b-chat-hf-5a7926c5dee748e5b83600f28f3b116c at 0x116d00e00&gt; JSON: {
-  "id": "meta-llama/Llama-2-70b-chat-hf-5a7926c5dee748e5b83600f28f3b116c",
-  "object": "text_completion",
-  "created": 1697433235,
-  "model": "meta-llama/Llama-2-70b-chat-hf",
-  "choices": [
-    {
-      "message": {
-        "role": "assistant",
-        "content": " Sure! 1 + 1 = 2."
-      },
-      "index": 0,
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 18,
-    "completion_tokens": 12,
-    "total_tokens": 30
-  }
-}</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb33" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response[<span class="st">"choices"</span>][<span class="dv">0</span>][<span class="st">"message"</span>][<span class="st">"content"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code> Sure! 1 + 1 = 2.</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb35" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>openai.api_base <span class="op">=</span> <span class="st">"https://api.openai.com/v1/"</span></span>
-<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>openai.api_key <span class="op">=</span> <span class="st">"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"</span></span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb36" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb36-1"><a href="#cb36-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> openai.ChatCompletion.create(</span>
-<span id="cb36-2"><a href="#cb36-2" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="st">"gpt-3.5-turbo"</span>,</span>
-<span id="cb36-3"><a href="#cb36-3" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">=</span>[</span>
-<span id="cb36-4"><a href="#cb36-4" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb36-5"><a href="#cb36-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"You are a helpful assistant."</span>,</span>
-<span id="cb36-6"><a href="#cb36-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"Return an integer, 1+1=."</span>,</span>
-<span id="cb36-7"><a href="#cb36-7" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb36-8"><a href="#cb36-8" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb36-9"><a href="#cb36-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb36-10"><a href="#cb36-10" aria-hidden="true" tabindex="-1"></a>response</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="36">
-<pre data-code-line-numbers=""><code>&lt;OpenAIObject chat.completion id=chatcmpl-8AAGsj9aV2yuw2frp9YLGGZKycWqH at 0x116d65b70&gt; JSON: {
-  "id": "chatcmpl-8AAGsj9aV2yuw2frp9YLGGZKycWqH",
-  "object": "chat.completion",
-  "created": 1697433454,
-  "model": "gpt-3.5-turbo-0613",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "The integer expression 1+1 is equal to 2."
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 16,
-    "completion_tokens": 13,
-    "total_tokens": 29
-  }
-}</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb38" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb38-1"><a href="#cb38-1" aria-hidden="true" tabindex="-1"></a>response <span class="op">=</span> openai.ChatCompletion.create(</span>
-<span id="cb38-2"><a href="#cb38-2" aria-hidden="true" tabindex="-1"></a>    model<span class="op">=</span><span class="st">"gpt-4"</span>,</span>
-<span id="cb38-3"><a href="#cb38-3" aria-hidden="true" tabindex="-1"></a>    messages<span class="op">=</span>[</span>
-<span id="cb38-4"><a href="#cb38-4" aria-hidden="true" tabindex="-1"></a>        {</span>
-<span id="cb38-5"><a href="#cb38-5" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"You are a helpful assistant."</span>,</span>
-<span id="cb38-6"><a href="#cb38-6" aria-hidden="true" tabindex="-1"></a>            <span class="st">"role"</span>: <span class="st">"user"</span>, <span class="st">"content"</span>: <span class="st">"Return an integer, 1+1=."</span>,</span>
-<span id="cb38-7"><a href="#cb38-7" aria-hidden="true" tabindex="-1"></a>        }</span>
-<span id="cb38-8"><a href="#cb38-8" aria-hidden="true" tabindex="-1"></a>    ]</span>
-<span id="cb38-9"><a href="#cb38-9" aria-hidden="true" tabindex="-1"></a>)</span>
-<span id="cb38-10"><a href="#cb38-10" aria-hidden="true" tabindex="-1"></a>response</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="34">
-<pre data-code-line-numbers=""><code>&lt;OpenAIObject chat.completion id=chatcmpl-8AAGZGYbMM6OOHTjdTIrqKIKyJlBs at 0x116c9a930&gt; JSON: {
-  "id": "chatcmpl-8AAGZGYbMM6OOHTjdTIrqKIKyJlBs",
-  "object": "chat.completion",
-  "created": 1697433435,
-  "model": "gpt-4-0613",
-  "choices": [
-    {
-      "index": 0,
-      "message": {
-        "role": "assistant",
-        "content": "2"
-      },
-      "finish_reason": "stop"
-    }
-  ],
-  "usage": {
-    "prompt_tokens": 16,
-    "completion_tokens": 1,
-    "total_tokens": 17
-  }
-}</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb40" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(response[<span class="st">"choices"</span>][<span class="dv">0</span>][<span class="st">"message"</span>][<span class="st">"content"</span>])</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>2</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb42" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb42-1"><a href="#cb42-1" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> outlines.text.generate <span class="im">as</span> generate</span>
-<span id="cb42-2"><a href="#cb42-2" aria-hidden="true" tabindex="-1"></a><span class="im">import</span> outlines.models <span class="im">as</span> models</span>
-<span id="cb42-3"><a href="#cb42-3" aria-hidden="true" tabindex="-1"></a><span class="im">from</span> huggingface_hub <span class="im">import</span> login</span>
-<span id="cb42-4"><a href="#cb42-4" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb42-5"><a href="#cb42-5" aria-hidden="true" tabindex="-1"></a>login()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>Token is valid (permission: read).
-Your token has been saved in your configured git credential helpers (osxkeychain).
-Your token has been saved to /Users/marwansarieddine/.cache/huggingface/token
-Login successful</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb44" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb44-1"><a href="#cb44-1" aria-hidden="true" tabindex="-1"></a><span class="co"># model = models.transformers("meta-llama/Llama-2-7b-chat-hf", device="mps")</span></span>
-<span id="cb44-2"><a href="#cb44-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-3"><a href="#cb44-3" aria-hidden="true" tabindex="-1"></a><span class="co"># prompt = """1+1="""</span></span>
-<span id="cb44-4"><a href="#cb44-4" aria-hidden="true" tabindex="-1"></a><span class="co"># answer = generate.integer(model, max_tokens=20)(prompt)</span></span>
-<span id="cb44-5"><a href="#cb44-5" aria-hidden="true" tabindex="-1"></a><span class="co"># print(answer)</span></span>
-<span id="cb44-6"><a href="#cb44-6" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-7"><a href="#cb44-7" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-8"><a href="#cb44-8" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> models.transformers(<span class="st">"gpt2"</span>, device<span class="op">=</span><span class="st">"mps"</span>)</span>
-<span id="cb44-9"><a href="#cb44-9" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb44-10"><a href="#cb44-10" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="st">"""1+1="""</span></span>
-<span id="cb44-11"><a href="#cb44-11" aria-hidden="true" tabindex="-1"></a>answer <span class="op">=</span> generate.integer(model, max_tokens<span class="op">=</span><span class="dv">20</span>)(prompt)</span>
-<span id="cb44-12"><a href="#cb44-12" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(answer)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>02633031351812286487554313921229487190791897</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb46" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb46-1"><a href="#cb46-1" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="st">"""1+1="""</span></span>
-<span id="cb46-2"><a href="#cb46-2" aria-hidden="true" tabindex="-1"></a>answer <span class="op">=</span> generate.integer(model, max_tokens<span class="op">=</span><span class="dv">1</span>)(prompt)</span>
-<span id="cb46-3"><a href="#cb46-3" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(answer)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-stdout">
-<pre data-code-line-numbers=""><code>0</code></pre>
-</div>
-</div>
-<div class="cell">
-<div class="sourceCode cell-code" id="cb48" data-source-line-numbers="nil" data-code-line-numbers="nil"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb48-1"><a href="#cb48-1" aria-hidden="true" tabindex="-1"></a>model <span class="op">=</span> models.transformers(<span class="st">"gpt2"</span>, device<span class="op">=</span><span class="st">"mps"</span>)</span>
-<span id="cb48-2"><a href="#cb48-2" aria-hidden="true" tabindex="-1"></a></span>
-<span id="cb48-3"><a href="#cb48-3" aria-hidden="true" tabindex="-1"></a>prompt <span class="op">=</span> <span class="st">"""1+1="""</span></span>
-<span id="cb48-4"><a href="#cb48-4" aria-hidden="true" tabindex="-1"></a>answer <span class="op">=</span> generate.integer(model, max_tokens<span class="op">=</span><span class="dv">20</span>)(prompt)</span>
-<span id="cb48-5"><a href="#cb48-5" aria-hidden="true" tabindex="-1"></a><span class="bu">print</span>(answer)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-</div>
 </section>
 </section>
 
